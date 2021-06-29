@@ -22,40 +22,33 @@ class Room:
             self.clients.append(address)
             return 1
 
-def start():
-    def new_client(client, server):
-        print('New client {}:{} has joined.'.format(client['address'][0], client['address'][1]))
-        time.sleep(2)
-        # クライアントへメッセージ送信
-        server.send_message(client, 'from server 1st message in new_client')
-        time.sleep(2)
-        # クライアントへメッセージ送信
-        server.send_message(client, 'from server 2st message in new_client')
- 
-    # クライアントが切断した時のイベント
-    def client_left(client, server):
-        print('Client {}:{} has left.'.format(client['address'][0], client['address'][1]))
- 
-    # クライアントからのメッセージを受信した時のイベント
-    def message_received(client, server, message):
-        print(message)
+class WS():
+    def __init__(self, autorun):
+        _PORT = 10005
+        _HOST = '0.0.0.0'
+        self.server = WebsocketServer(port=_PORT, host=_HOST)
+        self.clients = []
 
-        if (message != "COM:"):
-            room = Room()
-            print(room.roomid)
+        if (autorun):
+            self.run()
 
-        time.sleep(2)
-        # クライアントへメッセージ送信
-        server.send_message(client, 'Hi')
- 
-    # 10005番ポートでサーバーを立ち上げる
-    server = WebsocketServer(port=10005, host='0.0.0.0')
-    # イベントで使うメソッドの設定
-    server.set_fn_new_client(new_client)
-    server.set_fn_client_left(client_left)
-    server.set_fn_message_received(message_received)
-    # 実行
-    server.run_forever()
- 
+    def new_client(self, client, server):
+        print('New client : {} / given ID : {}'.format(client['address'][0], client['id']))
+        self.clients.append(client)
+
+    def client_left(self, client, server):
+        print('Client left : {}'.format(client['address'][0]))
+
+    def message_received(self, client, server, message):
+        to = int(random.uniform(0, len(self.clients)-1))
+        print('{}'.format(to))
+        self.server.send_message(self.clients[to], 'You choosed.')
+
+    def run(self):
+        self.server.set_fn_new_client(self.new_client)
+        self.server.set_fn_client_left(self.client_left)
+        self.server.set_fn_message_received(self.message_received)
+        self.server.run_forever()
+
 if __name__ == "__main__":
-    start()
+    ws = WS(True)
